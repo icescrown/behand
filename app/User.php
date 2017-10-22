@@ -28,4 +28,34 @@ class User extends \TCG\Voyager\Models\User
     protected $hidden = [
         'password', 'remember_token',
     ];
+
+    /**
+     * 修改权限
+     */
+    public function can($permission, $requireAll = false)
+    {
+        if (is_array($permission)) {
+            foreach ($permission as $permName) {
+                $hasPerm = $this->can($permName);
+
+                if ($hasPerm && !$requireAll) {
+                    return true;
+                } elseif (!$hasPerm && $requireAll) {
+                    return false;
+                }
+            }
+            return $requireAll;
+        } else {
+            foreach ($this->cachedRoles() as $role) {
+                // Validate against the Permission table
+                foreach ($role->cachedPermissions() as $perm) {
+                    if ( false !== strpos($perm->key, $permission) ) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
 }
